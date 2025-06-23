@@ -1,0 +1,77 @@
+
+
+Table "Provincia" {
+  "IDProvincia" int [pk, increment]
+  "NombreProvincia" nvarchar(100)
+}
+
+Table "Localidad" {
+  "IDLocalidad" int [pk, increment]
+  "IDProvincia" int
+  "NombreLocalidad" nvarchar(100)
+}
+
+Table "Cliente" {
+  "Cuil" int [pk]
+  "Email" nvarchar(100)
+  "Password" nvarchar(100)
+  "NombreCliente" nvarchar(100)
+  "ApellidoCliente" nvarchar(100)
+  "IDLocalidad" int
+}
+
+Table "Restaurante" {
+  "IDRestaurante" int [pk, increment]
+  "Email" nvarchar(100)
+  "Password" nvarchar(100)
+  "NombreRestaurante" nvarchar(100)
+  "Direccion" nvarchar(255)
+  "IDLocalidad" int
+}
+
+Table "TipoComida" {
+  "IDTipoComida" int [pk, increment]
+  "NombreComida" nvarchar(100)
+}
+
+Table "TipoPlato" {
+  "IDTipoPlato" int [pk, increment]
+  "NombrePlato" nvarchar(100)
+  "IDTipoComida" int
+  "Descripcion" nvarchar(255)
+}
+
+Table "PlatoRestaurante" {
+  "IDPlatoRestaurante" int [pk, increment]
+  "IDRestaurante" int
+  "TituloPlato" nvarchar(100)
+  "PrecioUnitario" decimal(10,2)
+  "IDTipoPlato" int
+  "FechaBaja" datetime
+}
+
+Table "Calificaciones" {
+  "IDCalificaciones" int [pk, increment]
+  "FechaConsumo" date
+  "FechaCalificacion" datetime
+  "ClienteId" int
+  "IDPlatoRestaurante" int
+  "Calificacion" int
+  "Comentarios" nvarchar(255)
+}
+
+Ref:"Provincia"."IDProvincia" < "Localidad"."IDProvincia"
+
+Ref:"Localidad"."IDLocalidad" < "Cliente"."IDLocalidad"
+
+Ref:"Localidad"."IDLocalidad" < "Restaurante"."IDLocalidad"
+
+Ref:"TipoComida"."IDTipoComida" < "TipoPlato"."IDTipoComida"
+
+Ref:"Restaurante"."IDRestaurante" < "PlatoRestaurante"."IDRestaurante"
+
+Ref:"TipoPlato"."IDTipoPlato" < "PlatoRestaurante"."IDTipoPlato"
+
+Ref:"Cliente"."Cuil" < "Calificaciones"."ClienteId"
+
+Ref:"PlatoRestaurante"."IDPlatoRestaurante" < "Calificaciones"."IDPlatoRestaurante"
