@@ -1,3 +1,4 @@
+-- CREACION TABLAS --
 Create Database TPFinal
 Collate Latin1_General_CI_AI
 Go
@@ -72,6 +73,7 @@ Create Table Calificaciones(
 )
 Go
 
+ 
 -- INSERTS --
 
 -- Agregar Provincias 
@@ -591,14 +593,20 @@ VALUES
 ('2024-07-04', '2024-07-04 23:27:00', 201000568, 24, 2, 'Falta sabor'),
 ('2024-10-09', '2024-10-09 18:18:00', 201000578, 24, 4, 'Muy sabroso'),
 ('2024-03-11', '2024-03-11 11:26:00', 201000588, 16, 5, 'Buena onda'),
-('2024-06-01', '2024-06-01 14:27:00', 201000598, 37, 3, 'Recomendado');
+('2024-06-01', '2024-06-01 14:27:00', 201000598, 37, 3, 'Recomendado'),
+('2024-10-01', '2024-10-24 09:30:00', 201000008, 3, 5, 'Riquisimo'),
+('2024-09-10', '2024-09-10 12:41:00', 201000008, 3, 5, 'Excelete'),
+('2024-12-22', '2024-12-22 10:41:00', 201000008, 43, 5, 'Excelete'),
+('2024-05-05', '2024-05-05 12:41:00', 201000008, 5, 4, 'Zafable'),
+('2024-11-12', '2024-11-12 12:41:00', 201000008, 43, 3, 'Muy bueno'),
+('2024-12-12', '2024-12-12 12:41:00', 201000008, 50, 5, 'Perfecto');
 
 
+
+ 
 -- PROCEDIMIENTOS --
 
-
 -- Procedimiento para agregar un Plato
-GO
 
 Create Or Alter procedure SP_AgregarPlato
   @IDRestaurante   int,
@@ -648,76 +656,82 @@ End
 GO
 
 
+ 
 -- VIEWS --
 
+--(1) Se generará una vista que permita identificar al cliente que ha aportado la mayor cantidad de calificaciones en el sistema. Esta información resulta valiosa para reconocer a los clientes más activos y comprometidos con el proceso de retroalimentación, quienes juegan un rol importante en la construcción de la reputación del restaurante.
 
--- Se diseñará una vista que permita identificar el plato con la calificación promedio más alta, considerando únicamente aquellos platos que también tienen un volumen significativo de reseñas (el que "más suena"). De esta manera, se garantiza que el resultado sea relevante tanto en calidad (calificación) como en popularidad (cantidad de opiniones recibidas).
+CREATE VIEW View_ClienteMasCalificaciones AS
+SELECT TOP 1
+    c.Cuil,
+    c.NombreCliente,
+    c.ApellidoCliente,
+    count(k.IDCalificaciones) AS TotalCalificaciones
+FROM
+    Cliente AS c
+	inner join Calificaciones AS k ON c.Cuil = k.ClienteId
+	inner join PlatoRestaurante AS p ON k.IDPlatoRestaurante = p.IDPlatoRestaurante
+WHERE
+	P.IDRestaurante = 22
+GROUP BY
+    c.Cuil,
+    c.NombreCliente,
+    c.ApellidoCliente
+ORDER BY
+    TotalCalificaciones DESC;
 GO
-   create view View_MejorPlato as
-select
-   p.IDRestaurante,
-   p.IDPlatoRestaurante,
-   count(t.IDTipoPlato) as CantidadCalificacion,
-   avg(c.Calificacion) as PromediCalificacion
-from
-   Calificaciones as c
-   inner join PlatoRestaurante as p on p.IDPlatoRestaurante = c.IDPlatoRestaurante
-   inner join TipoPlato as t on t.IDTipoPlato = p.IDTipoPlato
-group by
-   p.IDRestaurante,
-   p.IDPlatoRestaurante
-go
 
--- se creará una vista que calcule el promedio de calificación recibido por cada tipo de plato ofrecido en el restaurante. Esta información permitirá analizar la percepción de los clientes sobre las diferentes categorías del menú y detectar fortalezas o posibles áreas de mejora por tipo de plato.
-GO
-   create VIEW View_PromedioPlatoPorRestaurante AS
+SELECT * FROM View_ClienteMasCalificaciones
+
+
+-- (2) se creará una vista que calcule el promedio de calificación recibido por cada tipo de plato ofrecido en el restaurante. Esta información permitirá analizar la percepción de los clientes sobre las diferentes categorías del menú y detectar fortalezas o posibles áreas de mejora por tipo de plato.
+
+CREATE VIEW View_PromedioPlatoPorRestaurante AS
 SELECT
-   r.IDRestaurante,
-   r.NombreRestaurante,
    t.IDTipoPlato,
    t.NombrePlato,
    AVG(c.Calificacion) AS Promedio
 FROM
    Calificaciones AS c
    INNER JOIN PlatoRestaurante AS p ON p.IDPlatoRestaurante = c.IDPlatoRestaurante
-   INNER JOIN Restaurante AS r ON r.IDRestaurante = p.IDRestaurante
-   inner join TipoPlato as t on t.IDTipoPlato = p.IDTipoPlato
+   INNER JOIN TipoPlato AS t ON t.IDTipoPlato = p.IDTipoPlato
+WHERE
+	P.IDRestaurante = 22
 GROUP BY
-   r.IDRestaurante,
-   r.NombreRestaurante,
    t.IDTipoPlato,
    t.NombrePlato
 GO
 
-select * from View_PromedioPlatoPorRestaurante
 
--- Se generará una vista que permita identificar al cliente que ha aportado la mayor cantidad de calificaciones en el sistema. Esta información resulta valiosa para reconocer a los clientes más activos y comprometidos con el proceso de retroalimentación, quienes juegan un rol importante en la construcción de la reputación del restaurante.
+SELECT * FROM View_PromedioPlatoPorRestaurante
 
+
+--(3) Se diseñará una vista que permita identificar el plato con la calificación promedio más alta, considerando únicamente aquellos platos que también tienen un volumen significativo de reseñas (el que "más suena"). De esta manera, se garantiza que el resultado sea relevante tanto en calidad (calificación) como en popularidad (cantidad de opiniones recibidas).
+
+CREATE VIEW View_MejorPlato AS
+SELECT
+    p.IDPlatoRestaurante,
+    p.TituloPlato,
+    count(t.IDTipoPlato) AS CantidadCalificacion,
+    avg(c.Calificacion) AS PromediCalificacion
+FROM
+   Calificaciones AS c
+   inner join PlatoRestaurante AS p ON p.IDPlatoRestaurante = c.IDPlatoRestaurante
+   inner join TipoPlato AS t ON t.IDTipoPlato = p.IDTipoPlato
+WHERE
+	p.IDRestaurante = 22
+GROUP BY
+    p.IDPlatoRestaurante,
+    p.TituloPlato
 GO
-create view View_ClienteMasCalificaciones as
-select top 1
-    c.Cuil,
-    c.NombreCliente,
-    c.ApellidoCliente,
-    count(k.IDCalificaciones) as TotalCalificaciones
-from
-    Cliente as c
-inner join
-    Calificaciones as k on c.Cuil = k.ClienteId
-group by
-    c.Cuil,
-    c.NombreCliente,
-    c.ApellidoCliente
-order by
-    TotalCalificaciones desc;
-go
 
-select * from View_ClienteMasCalificaciones
+SELECT * FROM View_MejorPlato;
 
 
+
+ 
 -- TRIGGERS --
 
-GO
 CREATE TRIGGER TR_Calificaciones_ValidarFechas
 ON Calificaciones
 after insert, update
@@ -733,6 +747,7 @@ GO
 
 
 -- Trigger para que, en lugar de eliminar un plato fisicamente, se realice una baja logica
+
 Create Or Alter Trigger TR_BorrarPlato ON PlatoRestaurante
 Instead Of Delete
 As
@@ -893,4 +908,3 @@ VALUES ('contacto1@resto.com', 'Clave123', 'Nuevo Resto', 'Calle Falsa 123', 1);
 /*INSERT INTO Cliente (Cuil, Email, Password, NombreCliente, ApellidoCliente, IDLocalidad)
 VALUES (209999999, 'marcosparla@hotmail.com', 'Hash1234', 'Otro', 'Nombre', 1);
 -- Debe fallar y decir que el email ya existe*/
-
